@@ -8,6 +8,7 @@ package br.com.oficial2poo2.telas;
 import java.sql.*;
 import br.com.oficial2poo2.dal.ModuloConexao;
 import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 import net.proteanit.sql.DbUtils;
 
 /**
@@ -50,6 +51,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
         txtClienteId.setText(tblClientes.getModel().getValueAt(setar, 0).toString());
         
     }
+    //método para emitir_os
     private void emitir_os(){
         String sql = "insert into os (tipo, situacao, equipamento, defeito, servico, tecnico, valor, id_cliente) values (?,?,?,?,?,?,?,?)";
         try {
@@ -60,28 +62,139 @@ public class TelaOs extends javax.swing.JInternalFrame {
             pst.setString(4, txtOsDefeito.getText());
             pst.setString(5, txtOsServico.getText());
             pst.setString(6, txtOsTecnico.getText());
-            pst.setString(7, txtOsValor.getText());
+            //substitui a virgula pelos pontos
+            pst.setString(7, txtOsValor.getText().replace(",", "."));
             pst.setString(8, txtClienteId.getText());
             
             //validação dos campos obrigatórios
-            if ((txtClienteId.getText().isEmpty()) || (txtOsEquipamento.getText().isEmpty()) || (txtOsDefeito.getText().isEmpty()))  {
+            if ((txtClienteId.getText().isEmpty()) || (txtOsEquipamento.getText().isEmpty()) || (txtOsDefeito.getText().isEmpty()) || cboOsIt.getSelectedItem().equals(" "))  {
                 JOptionPane.showMessageDialog(null, "Preencha todos os campos obrigatótios!");
             } else {
                 int adicionado = pst.executeUpdate();
                 if (adicionado > 0){
                     JOptionPane.showMessageDialog(null, "OS emitida com sucesso!");
+                   btnOsAdicionar.setEnabled(false);
+                   btnOsProcurar.setEnabled(false);
+                   btnOsImprimir.setEnabled(true);
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e);
+        }
+    }//método para pesquisar uma OS
+    private void pesquisar_os(){
+        //a linha abaixo cria uma caixa de entrada do tipo Joption Pane
+        String num_os=JOptionPane.showInputDialog("Número da OS");
+        String sql="select os, date_format(data_os, '%d/%m/%Y - %H:%i'),tipo,situacao,equipamento,defeito,servico,tecnico,valor,id_cliente from os where os=  " + num_os;
+        try {
+            pst=conexao.prepareStatement(sql);
+            rs=pst.executeQuery();
+            if (rs.next()) {
+                txtOs.setText(rs.getString(1));
+                txtData.setText(rs.getString(2));
+                //setando os radiobuttons
+                String rbtTipo=rs.getString(3);
+                if (rbtTipo.equals("OS")) {
+                    rbtServico.setSelected(true);
+                    tipo="OS";
+                } else {
+                    rbtOrcamento.setSelected(true);
+                    tipo="Orçamento";
+                }
+                cboOsIt.setSelectedItem(rs.getString(4));
+                txtOsEquipamento.setText(rs.getString(5));
+                txtOsDefeito.setText(rs.getString(6));
+                txtOsServico.setText(rs.getString(7));
+                txtOsTecnico.setText(rs.getString(8));
+                txtOsValor.setText(rs.getString(9));
+                txtClienteId.setText(rs.getString(10));
+                //evitando problemas, desabilitando botão "adicionar" em edição
+                btnOsAdicionar.setEnabled(false);
+                btnOsProcurar.setEnabled(false);
+                txtClientePesquisar.setEnabled(false);
+                tblClientes.setVisible(false);
+                //ativar demais botões
+                btnOsEditar.setEnabled(true);
+                btnOsExcluir.setEnabled(true);
+                btnOsImprimir.setEnabled(true);
+            } else {
+                JOptionPane.showMessageDialog(null, "OS não cadastrada!");
+            }
+        } catch (Exception e) {
+            JOptionPane.showConfirmDialog(null, e);
+            System.out.println(e);
+        }
+    }
+    //método para alterar OS
+    private void alterar_os(){
+        String sql = "update os set tipo=?, situacao=?, equipamento=?, defeito=?, servico=?, tecnico=?, valor=? where os=?";
+        try {
+            pst=conexao.prepareStatement(sql);
+            pst.setString(1, tipo);
+            pst.setString(2, cboOsIt.getSelectedItem().toString());
+            pst.setString(3, txtOsEquipamento.getText());
+            pst.setString(4, txtOsDefeito.getText());
+            pst.setString(5, txtOsServico.getText());
+            pst.setString(6, txtOsTecnico.getText());
+            //substitui a virgula pelos pontos
+            pst.setString(7, txtOsValor.getText().replace(",", "."));
+            pst.setString(8, txtOs.getText());
+            
+            //validação dos campos obrigatórios
+            if ((txtClienteId.getText().isEmpty()) || (txtOsEquipamento.getText().isEmpty()) || (txtOsDefeito.getText().isEmpty())|| cboOsIt.getSelectedItem().equals(" "))  {
+                JOptionPane.showMessageDialog(null, "Preencha todos os campos obrigatótios!");
+            } else {
+                int adicionado = pst.executeUpdate();
+                if (adicionado > 0){
+                    JOptionPane.showMessageDialog(null, "OS alterada com sucesso!");
+                    limpar();
+                }
+            }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e);
+        }
+    }
+    //método para excluir uma OS
+    private void excluir_os(){
+        int confirma=JOptionPane.showConfirmDialog(null, "Tem certeza que deseja excluir esta OS?", "Atenção", JOptionPane.YES_NO_OPTION);
+        if(confirma==JOptionPane.YES_OPTION);
+            String sql = "delete from os where os=?";
+            try {
+                pst=conexao.prepareStatement(sql);
+                pst.setString(1, txtOs.getText());
+                int apagado=pst.executeUpdate();
+                if (apagado>0) {
+                    JOptionPane.showMessageDialog(null, "OS excluida com sucesso!");
+                    
+                    limpar();
+                }
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(null, e);
+        }
+    }
+    //limpar campos e gerenciar os botões
+    private void limpar (){
+                    
+                    txtOs.setText(null);
+                    txtData.setText(null);
+                    txtClientePesquisar.setText(null);
+                    ((DefaultTableModel) tblClientes.getModel()).setRowCount(0);
+                    cboOsIt.setSelectedItem(" ");
                     txtClienteId.setText(null);
                     txtOsEquipamento.setText(null);
                     txtOsDefeito.setText(null);
                     txtOsServico.setText(null);
                     txtOsTecnico.setText(null);
                     txtOsValor.setText(null);
-                    
-                }
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, e);
-        }
+                    //habilita os objetos
+                    btnOsAdicionar.setEnabled(true);
+                    btnOsProcurar.setEnabled(true);
+                    txtClientePesquisar.setEnabled(true);
+                    tblClientes.setVisible(true);
+                    //desabilitar os botões
+                    btnOsEditar.setEnabled(false);
+                    btnOsExcluir.setEnabled(false);
+                    btnOsImprimir.setEnabled(false);
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -126,6 +239,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
         btnOsProcurar = new javax.swing.JButton();
         btnOsExcluir = new javax.swing.JButton();
         btnOsImprimir = new javax.swing.JButton();
+        jLabel12 = new javax.swing.JLabel();
 
         jToolBar1.setRollover(true);
 
@@ -165,6 +279,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
         });
 
         txtData.setEditable(false);
+        txtData.setFont(new java.awt.Font("Tahoma", 0, 10)); // NOI18N
 
         buttonGroup1.add(rbtOrcamento);
         rbtOrcamento.setText("Orçamento");
@@ -184,7 +299,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
 
         jLabel3.setText("Situação");
 
-        cboOsIt.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Aguardando Aprovação", "Abandonado Pelo Cliente", "Aguardando Peças", "Entrega OK", "Na Bancada", "Orçamento REPROVADO", "Retornou", " ", " ", " ", " " }));
+        cboOsIt.setModel(new javax.swing.DefaultComboBoxModel(new String[] { " ", "Aguardando Aprovação", "Abandonado Pelo Cliente", "Aguardando Peças", "Entrega OK", "Na Bancada", "Orçamento REPROVADO", "Retornou", " ", " ", " ", " " }));
 
         javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
@@ -194,24 +309,22 @@ public class TelaOs extends javax.swing.JInternalFrame {
                 .addContainerGap()
                 .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(jPanel1Layout.createSequentialGroup()
+                        .addComponent(rbtOrcamento)
+                        .addGap(18, 18, 18)
+                        .addComponent(rbtServico))
+                    .addGroup(jPanel1Layout.createSequentialGroup()
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                             .addComponent(jLabel1)
                             .addComponent(txtOs, javax.swing.GroupLayout.PREFERRED_SIZE, 59, javax.swing.GroupLayout.PREFERRED_SIZE))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                         .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtData, javax.swing.GroupLayout.PREFERRED_SIZE, 91, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel2))
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                    .addGroup(jPanel1Layout.createSequentialGroup()
-                        .addComponent(rbtOrcamento)
-                        .addGap(18, 18, 18)
-                        .addComponent(rbtServico)
-                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                            .addComponent(jLabel2)
+                            .addComponent(txtData, javax.swing.GroupLayout.PREFERRED_SIZE, 111, javax.swing.GroupLayout.PREFERRED_SIZE)))
                     .addGroup(jPanel1Layout.createSequentialGroup()
                         .addComponent(jLabel3)
                         .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(cboOsIt, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addGap(0, 35, Short.MAX_VALUE))))
+                        .addComponent(cboOsIt, javax.swing.GroupLayout.PREFERRED_SIZE, 174, javax.swing.GroupLayout.PREFERRED_SIZE)))
+                .addContainerGap(35, Short.MAX_VALUE))
         );
         jPanel1Layout.setVerticalGroup(
             jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -250,7 +363,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
 
         jLabel5.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/oficial2poo2/icones/find2.png"))); // NOI18N
 
-        jLabel6.setText("ID");
+        jLabel6.setText("* ID");
 
         txtClienteId.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -339,6 +452,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
 
         jLabel11.setText("Valor Total");
 
+        txtOsValor.setText("0");
         txtOsValor.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 txtOsValorActionPerformed(evt);
@@ -357,18 +471,38 @@ public class TelaOs extends javax.swing.JInternalFrame {
         btnOsEditar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/oficial2poo2/icones/edit_os.png"))); // NOI18N
         btnOsEditar.setToolTipText("Editar OS");
         btnOsEditar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnOsEditar.setEnabled(false);
+        btnOsEditar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnOsEditarActionPerformed(evt);
+            }
+        });
 
         btnOsProcurar.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/oficial2poo2/icones/search_os.png"))); // NOI18N
         btnOsProcurar.setToolTipText("Procurar OS");
         btnOsProcurar.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnOsProcurar.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnOsProcurarActionPerformed(evt);
+            }
+        });
 
         btnOsExcluir.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/oficial2poo2/icones/delete_os.png"))); // NOI18N
         btnOsExcluir.setToolTipText("Deletar OS");
         btnOsExcluir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnOsExcluir.setEnabled(false);
+        btnOsExcluir.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnOsExcluirActionPerformed(evt);
+            }
+        });
 
         btnOsImprimir.setIcon(new javax.swing.ImageIcon(getClass().getResource("/br/com/oficial2poo2/icones/print_os.png"))); // NOI18N
         btnOsImprimir.setToolTipText("Imprimir OS");
         btnOsImprimir.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
+        btnOsImprimir.setEnabled(false);
+
+        jLabel12.setText("* Campos Obrigatórios");
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
@@ -383,29 +517,6 @@ public class TelaOs extends javax.swing.JInternalFrame {
             .addGroup(layout.createSequentialGroup()
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addGap(30, 30, 30)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                .addComponent(jLabel7)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(25, 25, 25)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(jLabel9)
-                                    .addComponent(jLabel8)
-                                    .addComponent(jLabel10))
-                                .addGap(6, 6, 6)))
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(txtOsEquipamento, javax.swing.GroupLayout.PREFERRED_SIZE, 385, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(txtOsDefeito, javax.swing.GroupLayout.PREFERRED_SIZE, 385, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(txtOsServico, javax.swing.GroupLayout.PREFERRED_SIZE, 385, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addComponent(txtOsTecnico, javax.swing.GroupLayout.PREFERRED_SIZE, 187, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                .addGap(33, 33, 33)
-                                .addComponent(jLabel11)
-                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                .addComponent(txtOsValor, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE))))
-                    .addGroup(layout.createSequentialGroup()
                         .addGap(43, 43, 43)
                         .addComponent(btnOsAdicionar)
                         .addGap(27, 27, 27)
@@ -415,7 +526,33 @@ public class TelaOs extends javax.swing.JInternalFrame {
                         .addGap(32, 32, 32)
                         .addComponent(btnOsExcluir)
                         .addGap(33, 33, 33)
-                        .addComponent(btnOsImprimir)))
+                        .addComponent(btnOsImprimir))
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(30, 30, 30)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                            .addComponent(jLabel12)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                                        .addComponent(jLabel7)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED))
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addGap(25, 25, 25)
+                                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                                            .addComponent(jLabel9)
+                                            .addComponent(jLabel8)
+                                            .addComponent(jLabel10))
+                                        .addGap(6, 6, 6)))
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(txtOsEquipamento, javax.swing.GroupLayout.PREFERRED_SIZE, 385, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txtOsDefeito, javax.swing.GroupLayout.PREFERRED_SIZE, 385, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(txtOsServico, javax.swing.GroupLayout.PREFERRED_SIZE, 385, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addGroup(layout.createSequentialGroup()
+                                        .addComponent(txtOsTecnico, javax.swing.GroupLayout.PREFERRED_SIZE, 187, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                                        .addComponent(jLabel11)
+                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                        .addComponent(txtOsValor, javax.swing.GroupLayout.PREFERRED_SIZE, 110, javax.swing.GroupLayout.PREFERRED_SIZE)))))))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
@@ -425,7 +562,9 @@ public class TelaOs extends javax.swing.JInternalFrame {
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
                     .addComponent(jPanel2, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                     .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(37, 37, 37)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(jLabel12)
+                .addGap(12, 12, 12)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(jLabel7)
                     .addComponent(txtOsEquipamento, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
@@ -443,7 +582,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
                     .addComponent(txtOsTecnico, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                     .addComponent(jLabel11)
                     .addComponent(txtOsValor, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 60, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 65, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.CENTER)
                     .addComponent(btnOsProcurar)
                     .addComponent(btnOsExcluir)
@@ -511,6 +650,21 @@ public class TelaOs extends javax.swing.JInternalFrame {
         emitir_os();
     }//GEN-LAST:event_btnOsAdicionarActionPerformed
 
+    private void btnOsProcurarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOsProcurarActionPerformed
+        // chamar o método pesquisar OS
+        pesquisar_os();
+    }//GEN-LAST:event_btnOsProcurarActionPerformed
+
+    private void btnOsEditarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOsEditarActionPerformed
+        // chamando o método "alterar OS"
+        alterar_os();
+    }//GEN-LAST:event_btnOsEditarActionPerformed
+
+    private void btnOsExcluirActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnOsExcluirActionPerformed
+        // método para excluir OS
+        excluir_os();
+    }//GEN-LAST:event_btnOsExcluirActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnOsAdicionar;
@@ -523,6 +677,7 @@ public class TelaOs extends javax.swing.JInternalFrame {
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel10;
     private javax.swing.JLabel jLabel11;
+    private javax.swing.JLabel jLabel12;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;

@@ -429,7 +429,12 @@ public class TelaCliente extends javax.swing.JInternalFrame {
 
     private void btnRemoverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnRemoverActionPerformed
         // chama o método para remover cliente
-        remover();
+        
+        if(tblClientes.getSelectedRow() != -1){
+            remover();
+        }else{
+            JOptionPane.showMessageDialog(null,"Falta selecionar um cliente para remoção" );
+        }
     }//GEN-LAST:event_btnRemoverActionPerformed
 
 
